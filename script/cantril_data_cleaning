@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Check the number of input arguments
+if [ $# -ne 3 ]; then
+    echo "Error: Incorrect number of arguments."
+    echo "Usage: cantril_data_cleaning file1 file2 file3"
+    exit 1
+fi
+
+# Read file content
+file1_contents=$(cat "$1")
+file2_contents=$(cat "$2")
+file3_contents=$(cat "$3")
+
+# Define string identifier
+gdp_file_identifier="Cantril ladder score"
+homicide_file_identifier="Homicide rate per 100,000"
+life_file_identifier="Life expectancy"
+
+# Retrieve the corresponding file content based on the identifier
+get_file_content() {
+    local identifier=$1
+    if [[ $file1_contents == *"$identifier"* ]]; then
+        echo "$file1_contents"
+    elif [[ $file2_contents == *"$identifier"* ]]; then
+        echo "$file2_contents"
+    elif [[ $file3_contents == *"$identifier"* ]]; then
+        echo "$file3_contents"
+    else
+        echo "Failed to find the corresponding file by $identifier"
+        exit 1
+    fi
+}
+
+gdp_file_content=$(get_file_content "$gdp_file_identifier")
+homicide_file_content=$(get_file_content "$homicide_file_identifier")
+life_file_content=$(get_file_content "$life_file_identifier")
+
+# Determine the uniqueness of the content of three files
+if [[ "$file1_contents" == "$file2_contents" || "$file1_contents" == "$file3_contents" || "$file2_contents" == "$file3_contents" ]]; then
+    echo "Error: The file contents are not unique."
+    exit 1
+fi
+
+echo "success"
