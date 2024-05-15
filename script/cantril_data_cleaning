@@ -1,9 +1,16 @@
 #!/bin/bash
 
+usage_string="Usage: cantril_data_cleaning file1 file2 file3"
+
 # Check the number of input arguments
 if [ $# -ne 3 ]; then
     echo "Error: Incorrect number of arguments."
-    echo "Usage: cantril_data_cleaning file1 file2 file3"
+    echo $usage_string
+    exit 1
+fi
+
+if ! [ -f "$1" ] || ! [ -f "$2" ] || ! [ -f "$3" ]; then
+    echo "Existing files do not exist, please check."
     exit 1
 fi
 
@@ -12,34 +19,104 @@ file1_contents=$(cat "$1")
 file2_contents=$(cat "$2")
 file3_contents=$(cat "$3")
 
-# Define string identifier
-gdp_file_identifier="Cantril ladder score"
-homicide_file_identifier="Homicide rate per 100,000"
-life_file_identifier="Life expectancy"
+echo "Success to read file"
+echo "Start checking if the first row is tab-delimited"
 
-# Retrieve the corresponding file content based on the identifier
-get_file_content() {
-    local identifier=$1
-    if [[ $file1_contents == *"$identifier"* ]]; then
-        echo "$file1_contents"
-    elif [[ $file2_contents == *"$identifier"* ]]; then
-        echo "$file2_contents"
-    elif [[ $file3_contents == *"$identifier"* ]]; then
-        echo "$file3_contents"
+# Ensure that the file is in a tab separated format based on the title (i.e. top) line“
+# This function takes the file content as input and returns 1 if the first line is tab-separated, otherwise returns 0.
+is_tab_delimited() {
+    local file_content=$1
+    local title_line=$(echo "$file_content" | head -n 1)
+    local tab_count=$(echo "$title_line" | grep -o $'\t' | wc -l)
+    echo "Tab count: $tab_count"
+    if [[ $tab_count -gt 0 ]]; then
+        return 0
     else
-        echo "Failed to find the corresponding file by $identifier"
-        exit 1
+        return 1
     fi
 }
 
-gdp_file_content=$(get_file_content "$gdp_file_identifier")
-homicide_file_content=$(get_file_content "$homicide_file_identifier")
-life_file_content=$(get_file_content "$life_file_identifier")
-
-# Determine the uniqueness of the content of three files
-if [[ "$file1_contents" == "$file2_contents" || "$file1_contents" == "$file3_contents" || "$file2_contents" == "$file3_contents" ]]; then
-    echo "Error: The file contents are not unique."
+if is_tab_delimited "$file1_contents"; then
+    echo "The first file is tab-delimited."
+else
+    echo "The first file is not tab-delimited."
     exit 1
 fi
 
-echo "success"
+if is_tab_delimited "$file2_contents"; then
+    echo "The second file is tab-delimited."
+else
+    echo "The second file is not tab-delimited."
+    exit 1
+fi
+
+if is_tab_delimited "$file3_contents"; then
+    echo "The third file is tab-delimited."
+else
+    echo "The third file is not tab-delimited."
+    exit 1
+fi
+
+# Define string identifier
+# gdp_file_identifier="Cantril ladder score"
+# homicide_file_identifier="Homicide rate per 100,000"
+# life_file_identifier="Life expectancy"
+
+# is_gdp_file() {
+#     local file_content=$1
+#     local title_line=$(echo "$file_content" | head -n 1)
+#     IFS=$'\t' read -ra array <<< "$title_line"
+#     if [ ${#array[@]} -eq 7 ] && [ ${array[0]} == "Entity" ] && [ ${array[1]} == "Code" ] && [ ${array[2]} == "Year" ] && [ ${array[3]} == "Cantril ladder score" ] && [ ${array[4]} == "\"GDP per capita, PPP (constant 2017 international $)\"" ] && [ ${array[5]} == "Population (historical estimates)" ] && [ ${array[6]} == "Continent" ]; then
+#         return 1;
+#     else  
+#         return 0;
+#     fi
+# }
+
+# get_gdp_file() {
+#     if [[ is_gdp_file "$file1_contents" ]]; then
+#         echo "$file1_contents"
+#     elif [[ is_gdp_file "$file2_contents" ]]; then
+#         echo "$file2_contents"
+#     elif [[ is_gdp_file "$file2_contents" ]]; then
+#         echo "$file3_contents"
+#     else
+#         return 1
+#     fi
+# }
+
+# gdp_file_content=$(get_file_content "$gdp_file_identifier")
+
+# # Retrieve the corresponding file content based on the identifier
+# get_file_content() {
+#     local identifier=$1
+#     if [[ $file1_contents =~ $identifier ]]; then
+#         echo "$file1_contents"
+#     elif [[ $file2_contents =~ $identifier ]]; then
+#         echo "$file2_contents"
+#     elif [[ $file3_contents =~ "$identifier" ]]; then
+#         echo "$file3_contents"
+#     else
+#         return 1
+#     fi
+# }
+
+# echo "Start to recognize file"
+
+# gdp_file_content=$(get_file_content "$gdp_file_identifier")
+# if [[ $? -ne 0 ]]; then
+#     echo "Error format for 'gdp-vs-happiness' file."
+#     exit 1
+# fi
+# homicide_file_content=$(get_file_content "$homicide_file_identifier")
+# life_file_content=$(get_file_content "$life_file_identifier")
+
+# # Determine the uniqueness of the content of three files
+# if [[ "$file1_contents" == "$file2_contents" || "$file1_contents" == "$file3_contents" || "$file2_contents" == "$file3_contents" ]]; then
+#     echo "Error: The file contents are not unique."
+#     exit 1
+# fi
+
+# echo "Success to recognize file"
+
+# echo "All files are tab-delimited"
