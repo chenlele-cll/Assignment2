@@ -28,7 +28,7 @@ is_tab_delimited() {
     local file_content=$1
     local title_line=$(echo "$file_content" | head -n 1)
     local tab_count=$(echo "$title_line" | grep -o $'\t' | wc -l)
-    echo "Tab count: $tab_count"
+    # echo "Tab count: $tab_count"
     if [[ $tab_count -gt 0 ]]; then
         return 0
     else
@@ -57,35 +57,124 @@ else
     exit 1
 fi
 
-# Define string identifier
-# gdp_file_identifier="Cantril ladder score"
-# homicide_file_identifier="Homicide rate per 100,000"
-# life_file_identifier="Life expectancy"
+echo "All files are tab-delimited"
+echo "Start to recognize file"
 
-# is_gdp_file() {
-#     local file_content=$1
-#     local title_line=$(echo "$file_content" | head -n 1)
-#     IFS=$'\t' read -ra array <<< "$title_line"
-#     if [ ${#array[@]} -eq 7 ] && [ ${array[0]} == "Entity" ] && [ ${array[1]} == "Code" ] && [ ${array[2]} == "Year" ] && [ ${array[3]} == "Cantril ladder score" ] && [ ${array[4]} == "\"GDP per capita, PPP (constant 2017 international $)\"" ] && [ ${array[5]} == "Population (historical estimates)" ] && [ ${array[6]} == "Continent" ]; then
-#         return 1;
-#     else  
-#         return 0;
-#     fi
-# }
+is_gdp_file() {
+    local file_content=$1
+    local title_line=$(echo "$file_content" | head -n 1)
+    IFS=$'\t' read -ra array <<< "$title_line"
+    if [ ${#array[@]} -eq 7 ] && \
+       [ "${array[0]}" == "Entity" ] && \
+       [ "${array[1]}" == "Code" ] && \
+       [ "${array[2]}" == "Year" ] && \
+       [ "${array[3]}" == "Cantril ladder score" ] && \
+       [ "${array[4]}" == "\"GDP per capita, PPP (constant 2017 international $)\"" ] && \
+       [ "${array[5]}" == "Population (historical estimates)" ] && \
+       [ "${array[6]}" == "Continent" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
 
-# get_gdp_file() {
-#     if [[ is_gdp_file "$file1_contents" ]]; then
-#         echo "$file1_contents"
-#     elif [[ is_gdp_file "$file2_contents" ]]; then
-#         echo "$file2_contents"
-#     elif [[ is_gdp_file "$file2_contents" ]]; then
-#         echo "$file3_contents"
-#     else
-#         return 1
-#     fi
-# }
+get_gdp_file() {
+    if is_gdp_file "$file1_contents"; then
+        echo "$file1_contents"
+    elif is_gdp_file "$file2_contents"; then
+        echo "$file2_contents"
+    elif is_gdp_file "$file3_contents"; then
+        echo "$file3_contents"
+    else
+        return 1
+    fi
+}
 
-# gdp_file_content=$(get_file_content "$gdp_file_identifier")
+gdp_file_content=$(get_gdp_file)
+if [[ $? -ne 0 ]]; then
+    echo "Error: Failed to get gdp file."
+    exit 1
+fi
+# echo "$gdp_file_content" | head -n 1
+
+is_homicide_file() {
+    local file_content=$1
+    local title_line=$(echo "$file_content" | head -n 1)
+    IFS=$'\t' read -ra array <<< "$title_line"
+    if [ ${#array[@]} -eq 4 ] && \
+       [ "${array[0]}" == "Entity" ] && \
+       [ "${array[1]}" == "Code" ] && \
+       [ "${array[2]}" == "Year" ] && \
+       [ "${array[3]}" == "\"Homicide rate per 100,000 population - Both sexes - All ages\"" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+get_homicide_file() {
+    if is_homicide_file "$file1_contents"; then
+        echo "$file1_contents"
+    elif is_homicide_file "$file2_contents"; then
+        echo "$file2_contents"
+    elif is_homicide_file "$file3_contents"; then
+        echo "$file3_contents"
+    else
+        return 1
+    fi
+}
+
+homicide_file_content=$(get_homicide_file)
+if [[ $? -ne 0 ]]; then
+    echo "Error: Failed to get homicide file."
+    exit 1
+fi
+#echo "$homicide_file_content" | head -n 1
+
+is_life_file() {
+    local file_content=$1
+    local title_line=$(echo "$file_content" | head -n 1)
+    IFS=$'\t' read -ra array <<< "$title_line"
+    if [ ${#array[@]} -eq 7 ] && \
+       [ "${array[0]}" == "Entity" ] && \
+       [ "${array[1]}" == "Code" ] && \
+       [ "${array[2]}" == "Year" ] && \
+       [ "${array[3]}" == "Life expectancy - Sex: all - Age: at birth - Variant: estimates" ] && \
+       [ "${array[4]}" == "Cantril ladder score" ] && \
+       [ "${array[5]}" == "Population (historical estimates)" ] && \
+       [ "${array[6]}" == "Continent" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+get_life_file() {
+    if is_life_file "$file1_contents"; then
+        echo "$file1_contents"
+    elif is_life_file "$file2_contents"; then
+        echo "$file2_contents"
+    elif is_life_file "$file3_contents"; then
+        echo "$file3_contents"
+    else
+        return 1
+    fi
+}
+
+life_file_content=$(get_life_file)
+if [[ $? -ne 0 ]]; then
+    echo "Error: Failed to get life file."
+    exit 1
+fi
+#echo "$life_file_content" | head -n 1
+
+# Determine the uniqueness of the content of three files
+if [[ "$gdp_file_content" == "$homicide_file_content" || "$gdp_file_content" == "$life_file_content" || "$homicide_file_content" == "$life_file_content" ]]; then
+    echo "Error: The file contents are not unique."
+    exit 1
+fi
+
+echo "Success to recognize file"
 
 # # Retrieve the corresponding file content based on the identifier
 # get_file_content() {
@@ -101,8 +190,6 @@ fi
 #     fi
 # }
 
-# echo "Start to recognize file"
-
 # gdp_file_content=$(get_file_content "$gdp_file_identifier")
 # if [[ $? -ne 0 ]]; then
 #     echo "Error format for 'gdp-vs-happiness' file."
@@ -111,12 +198,4 @@ fi
 # homicide_file_content=$(get_file_content "$homicide_file_identifier")
 # life_file_content=$(get_file_content "$life_file_identifier")
 
-# # Determine the uniqueness of the content of three files
-# if [[ "$file1_contents" == "$file2_contents" || "$file1_contents" == "$file3_contents" || "$file2_contents" == "$file3_contents" ]]; then
-#     echo "Error: The file contents are not unique."
-#     exit 1
-# fi
-
 # echo "Success to recognize file"
-
-# echo "All files are tab-delimited"
