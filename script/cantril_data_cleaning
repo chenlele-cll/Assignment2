@@ -176,26 +176,31 @@ fi
 
 echo "Success to recognize file"
 
-# # Retrieve the corresponding file content based on the identifier
-# get_file_content() {
-#     local identifier=$1
-#     if [[ $file1_contents =~ $identifier ]]; then
-#         echo "$file1_contents"
-#     elif [[ $file2_contents =~ $identifier ]]; then
-#         echo "$file2_contents"
-#     elif [[ $file3_contents =~ "$identifier" ]]; then
-#         echo "$file3_contents"
-#     else
-#         return 1
-#     fi
-# }
+check_cell_count() {
+    local file_content="$1"
+    local title_line=$(echo "$file_content" | head -n 1)
+    IFS=$'\t' read -ra title_array <<< "$title_line"
+    # echo "title size: ${#title_array[@]}"
+    printf "%s\n" "${file_content}" | while IFS= read -r line
+    do  
+        # echo "File:${line}"
+        IFS=$'\t' read -ra array <<< "$line"
+        echo "line size: ${#array[@]}"
+        if [ ${#array[@]} -ne ${#title_array[@]} ]; then
+            echo "The number of cells in line [$line] is different from the title line."
+        fi
+    done
+}
 
-# gdp_file_content=$(get_file_content "$gdp_file_identifier")
-# if [[ $? -ne 0 ]]; then
-#     echo "Error format for 'gdp-vs-happiness' file."
-#     exit 1
-# fi
-# homicide_file_content=$(get_file_content "$homicide_file_identifier")
-# life_file_content=$(get_file_content "$life_file_identifier")
+check_cell_count "$gdp_file_content"
+check_cell_count "$homicide_file_content"
+check_cell_count "$life_file_content"
 
-# echo "Success to recognize file"
+delete_column() {
+    local file_content="$1"
+    local num="$2"
+    output_text=$(echo -e "$file_content" | cut -f${num} --complement)
+}
+
+# result=$(echo $gdp_file_content | awk -F'\t' '{$7=""; print}')
+# echo "$result"
