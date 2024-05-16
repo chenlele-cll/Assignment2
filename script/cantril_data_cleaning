@@ -4,13 +4,13 @@ usage_string="Usage: cantril_data_cleaning file1 file2 file3"
 
 # Check the number of input arguments
 if [ $# -ne 3 ]; then
-    echo "Error: Incorrect number of arguments."
-    echo ${usage_string}
+    echo "Error: Incorrect number of arguments." >&2
+    echo ${usage_string} >&2
     exit 1
 fi
 
 if ! [ -f "$1" ] || ! [ -f "$2" ] || ! [ -f "$3" ]; then
-    echo "Existing files do not exist, please check."
+    echo "Existing files do not exist, please check." >&2
     exit 1
 fi
 
@@ -42,21 +42,21 @@ is_tab_delimited() {
 if is_tab_delimited "${first_file}"; then
     echo "The first file is tab-delimited."
 else
-    echo "The first file is not tab-delimited."
+    echo "The first file is not tab-delimited." >&2
     exit 1
 fi
 
 if is_tab_delimited "${second_file}"; then
     echo "The second file is tab-delimited."
 else
-    echo "The second file is not tab-delimited."
+    echo "The second file is not tab-delimited." >&2
     exit 1
 fi
 
 if is_tab_delimited "${third_file}"; then
     echo "The third file is tab-delimited."
 else
-    echo "The third file is not tab-delimited."
+    echo "The third file is not tab-delimited." >&2
     exit 1
 fi
 
@@ -95,7 +95,7 @@ get_gdp_file() {
 
 gdp_file_path=$(get_gdp_file)
 if [[ $? -ne 0 ]]; then
-    echo "Error: Failed to get gdp file."
+    echo "Error: Failed to get gdp file." >&2
     exit 1
 fi
 echo "gdp_file_path = ${gdp_file_path}"
@@ -129,7 +129,7 @@ get_homicide_file() {
 
 homicide_file_path=$(get_homicide_file)
 if [[ $? -ne 0 ]]; then
-    echo "Error: Failed to get homicide file."
+    echo "Error: Failed to get homicide file." >&2
     exit 1
 fi
 echo "homicide_file_path = ${homicide_file_path}"
@@ -166,14 +166,14 @@ get_life_file() {
 
 life_file_path=$(get_life_file)
 if [[ $? -ne 0 ]]; then
-    echo "Error: Failed to get life file."
+    echo "Error: Failed to get life file." >&2
     exit 1
 fi
 echo "life_file_path = ${life_file_path}"
 
 # Determine the uniqueness of the content of three files
 if [[ "${gdp_file_path}" == "${homicide_file_path}" || "${gdp_file_path}" == "${life_file_path}" || "${homicide_file_path}" == "${life_file_path}" ]]; then
-    echo "Error: The file contents are not unique."
+    echo "Error: The file contents are not unique." >&2
     exit 1
 fi
 
