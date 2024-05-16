@@ -280,3 +280,6 @@ rm ${gdp_homicide_merged_file}
 
 echo "Complete to combine file"
 cat "${result_file}"
+
+mv "${result_file}" "./preprocessing_file.tsv"
+rm -r "$tmp_path"
