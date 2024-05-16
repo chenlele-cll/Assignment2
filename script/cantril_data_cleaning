@@ -227,6 +227,27 @@ mv ${filtered_homicide_tmp_path} ${homicide_tmp_path}
 mv ${filtered_life_tmp_path} ${life_tmp_path}
 
 echo "Complete filtering data between 2011-2021"
+echo "Start to check if the data type is correct"
+awk -f ./awk/gdp_valid.awk ${gdp_tmp_path}
+if [[ $? -ne 0 ]]; then
+    echo "gdp-vs-happiness file has invalid data" >&2
+    exit 1
+fi
+
+awk -f ./awk/homicide_valid.awk ${homicide_tmp_path}
+if [[ $? -ne 0 ]]; then
+    echo "homicide-rate-unodc file has invalid data" >&2
+    exit 1
+fi
+
+awk -f ./awk/life_valid.awk ${life_tmp_path}
+if [[ $? -ne 0 ]]; then
+    echo "life_valid file has invalid data" >&2
+    exit 1
+fi
+
+echo "All file data type is correct"
+
 echo "Start to combine file"
 
 (head -n 1 ${gdp_tmp_path} && tail -n +2 ${gdp_tmp_path} | sort -t $'\t' -k1,1 -k2,2 -k3,3) > ${filtered_gdp_tmp_path}
