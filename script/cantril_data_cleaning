@@ -14,10 +14,13 @@ if ! [ -f "$1" ] || ! [ -f "$2" ] || ! [ -f "$3" ]; then
     exit 1
 fi
 
-# Read file content
-file1_contents=$(cat "$1")
-file2_contents=$(cat "$2")
-file3_contents=$(cat "$3")
+first_file=$1
+second_file=$2
+third_file=$3
+
+# echo "first_file=$first_file"
+# echo "second_file=$second_file"
+# echo "third_file=$third_file"
 
 echo "Success to read file"
 echo "Start checking if the first row is tab-delimited"
@@ -25,8 +28,8 @@ echo "Start checking if the first row is tab-delimited"
 # Ensure that the file is in a tab separated format based on the title (i.e. top) line“
 # This function takes the file content as input and returns 1 if the first line is tab-separated, otherwise returns 0.
 is_tab_delimited() {
-    local file_content=$1
-    local title_line=$(echo "$file_content" | head -n 1)
+    local file_path=$1
+    local title_line=$(cat "$file_path" | head -n 1)
     local tab_count=$(echo "$title_line" | grep -o $'\t' | wc -l)
     # echo "Tab count: $tab_count"
     if [[ $tab_count -gt 0 ]]; then
@@ -36,21 +39,21 @@ is_tab_delimited() {
     fi
 }
 
-if is_tab_delimited "$file1_contents"; then
+if is_tab_delimited "$first_file"; then
     echo "The first file is tab-delimited."
 else
     echo "The first file is not tab-delimited."
     exit 1
 fi
 
-if is_tab_delimited "$file2_contents"; then
+if is_tab_delimited "$second_file"; then
     echo "The second file is tab-delimited."
 else
     echo "The second file is not tab-delimited."
     exit 1
 fi
 
-if is_tab_delimited "$file3_contents"; then
+if is_tab_delimited "$third_file"; then
     echo "The third file is tab-delimited."
 else
     echo "The third file is not tab-delimited."
@@ -61,8 +64,8 @@ echo "All files are tab-delimited"
 echo "Start to recognize file"
 
 is_gdp_file() {
-    local file_content=$1
-    local title_line=$(echo "$file_content" | head -n 1)
+    local file_path=$1
+    local title_line=$(cat "$file_path" | head -n 1)
     IFS=$'\t' read -ra array <<< "$title_line"
     if [ ${#array[@]} -eq 7 ] && \
        [ "${array[0]}" == "Entity" ] && \
@@ -79,27 +82,27 @@ is_gdp_file() {
 }
 
 get_gdp_file() {
-    if is_gdp_file "$file1_contents"; then
-        echo "$file1_contents"
-    elif is_gdp_file "$file2_contents"; then
-        echo "$file2_contents"
-    elif is_gdp_file "$file3_contents"; then
-        echo "$file3_contents"
+    if is_gdp_file "$first_file"; then
+        echo "$first_file"
+    elif is_gdp_file "$second_file"; then
+        echo "$second_file"
+    elif is_gdp_file "$third_file"; then
+        echo "$third_file"
     else
         return 1
     fi
 }
 
-gdp_file_content=$(get_gdp_file)
+gdp_file_path=$(get_gdp_file)
 if [[ $? -ne 0 ]]; then
     echo "Error: Failed to get gdp file."
     exit 1
 fi
-# echo "$gdp_file_content" | head -n 1
+echo "gdp_file_path = $gdp_file_path"
 
 is_homicide_file() {
-    local file_content=$1
-    local title_line=$(echo "$file_content" | head -n 1)
+    local file_path=$1
+    local title_line=$(cat "$file_path" | head -n 1)
     IFS=$'\t' read -ra array <<< "$title_line"
     if [ ${#array[@]} -eq 4 ] && \
        [ "${array[0]}" == "Entity" ] && \
@@ -113,27 +116,27 @@ is_homicide_file() {
 }
 
 get_homicide_file() {
-    if is_homicide_file "$file1_contents"; then
-        echo "$file1_contents"
-    elif is_homicide_file "$file2_contents"; then
-        echo "$file2_contents"
-    elif is_homicide_file "$file3_contents"; then
-        echo "$file3_contents"
+    if is_homicide_file "$first_file"; then
+        echo "$first_file"
+    elif is_homicide_file "$second_file"; then
+        echo "$second_file"
+    elif is_homicide_file "$third_file"; then
+        echo "$third_file"
     else
         return 1
     fi
 }
 
-homicide_file_content=$(get_homicide_file)
+homicide_file_path=$(get_homicide_file)
 if [[ $? -ne 0 ]]; then
     echo "Error: Failed to get homicide file."
     exit 1
 fi
-#echo "$homicide_file_content" | head -n 1
+echo "homicide_file_path = $homicide_file_path"
 
 is_life_file() {
-    local file_content=$1
-    local title_line=$(echo "$file_content" | head -n 1)
+    local file_path=$1
+    local title_line=$(cat "$file_path" | head -n 1)
     IFS=$'\t' read -ra array <<< "$title_line"
     if [ ${#array[@]} -eq 7 ] && \
        [ "${array[0]}" == "Entity" ] && \
@@ -150,58 +153,56 @@ is_life_file() {
 }
 
 get_life_file() {
-    if is_life_file "$file1_contents"; then
-        echo "$file1_contents"
-    elif is_life_file "$file2_contents"; then
-        echo "$file2_contents"
-    elif is_life_file "$file3_contents"; then
-        echo "$file3_contents"
+    if is_life_file "$first_file"; then
+        echo "$first_file"
+    elif is_life_file "$second_file"; then
+        echo "$second_file"
+    elif is_life_file "$third_file"; then
+        echo "$third_file"
     else
         return 1
     fi
 }
 
-life_file_content=$(get_life_file)
+life_file_path=$(get_life_file)
 if [[ $? -ne 0 ]]; then
     echo "Error: Failed to get life file."
     exit 1
 fi
-#echo "$life_file_content" | head -n 1
+echo "life_file_path = $life_file_path"
 
 # Determine the uniqueness of the content of three files
-if [[ "$gdp_file_content" == "$homicide_file_content" || "$gdp_file_content" == "$life_file_content" || "$homicide_file_content" == "$life_file_content" ]]; then
+if [[ "$gdp_file_path" == "$homicide_file_path" || "$gdp_file_path" == "$life_file_path" || "$homicide_file_path" == "$life_file_path" ]]; then
     echo "Error: The file contents are not unique."
     exit 1
 fi
 
 echo "Success to recognize file"
+echo "Start to cell count check"
+
+awk -F'\t' 'NR==FNR{title_tab_count=NF; next} NR>FNR{line_tab_count=NF; if (title_tab_count != line_tab_count) print "The number of cells in " FNR " th-line [" $0 "] is different from the title line."}' "$gdp_file_path" "$gdp_file_path"
+awk -F'\t' 'NR==FNR{title_tab_count=NF; next} NR>FNR{line_tab_count=NF; if (title_tab_count != line_tab_count) print "The number of cells in " FNR " th-line [" $0 "] is different from the title line."}' "$homicide_file_path" "$homicide_file_path"
+awk -F'\t' 'NR==FNR{title_tab_count=NF; next} NR>FNR{line_tab_count=NF; if (title_tab_count != line_tab_count) print "The number of cells in " FNR " th-line [" $0 "] is different from the title line."}' "$life_file_path" "$life_file_path"
+
+echo "Complete cell count check"
+
+tmp_path='../tmp/'
+if [ -d "$tmp_path" ]; then
+    rm -r "$tmp_path"
+fi
+mkdir $tmp_path
+
+# echo "Start deleting the column titled 'Continent'"
 
 # delete_column() {
 #     local file_content="$1"
-#     local num="$2"
-#     output_text=$(echo -e "$file_content" | cut -f${num} --complement)
+#     printf "%s\n" "${file_content}" | while IFS= read -r line
+#     do  
+#         printf '%s\t' "${row[@]:0:$((${#row[@]}-1))}"
+#         echo
+#     done
 # }
 
-# gdp_file_content=$(echo $gdp_file_content | awk '{$NF="";print $0}')
-# # gdp_file_content=$(echo "$gdp_file_content" | cut -f1,6-)
-# echo $gdp_file_content
+# delete_column "$gdp_file_content"
 
-check_cell_count() {
-    local file_content="$1"
-    local title_line=$(echo "$file_content" | head -n 1)
-    local title_tab_count=$(echo "$title_line" | grep -o $'\t' | wc -l)
-    # echo "title_tab_count: ${title_tab_count}"
-    local idx=0
-    printf "%s\n" "${file_content}" | while IFS= read -r line
-    do  
-        local line_tab_count=$(echo "$line" | grep -o $'\t' | wc -l)
-        let idx=$idx+1;
-        if [ ${title_tab_count} -ne ${line_tab_count} ]; then
-            echo "The number of cells in ${idx}th-line [$line] is different from the title line."
-        fi
-    done
-}
-
-check_cell_count "$gdp_file_content"
-check_cell_count "$homicide_file_content"
-check_cell_count "$life_file_content"
+# echo "Complete deleting the column titled 'Continent'"
