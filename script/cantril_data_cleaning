@@ -5,7 +5,7 @@ usage_string="Usage: cantril_data_cleaning file1 file2 file3"
 # Check the number of input arguments
 if [ $# -ne 3 ]; then
     echo "Error: Incorrect number of arguments."
-    echo $usage_string
+    echo ${usage_string}
     exit 1
 fi
 
@@ -29,8 +29,8 @@ echo "Start checking if the first row is tab-delimited"
 # This function takes the file content as input and returns 1 if the first line is tab-separated, otherwise returns 0.
 is_tab_delimited() {
     local file_path=$1
-    local title_line=$(cat "$file_path" | head -n 1)
-    local tab_count=$(echo "$title_line" | grep -o $'\t' | wc -l)
+    local title_line=$(cat "${file_path}" | head -n 1)
+    local tab_count=$(echo "${title_line}" | grep -o $'\t' | wc -l)
     # echo "Tab count: $tab_count"
     if [[ $tab_count -gt 0 ]]; then
         return 0
@@ -39,21 +39,21 @@ is_tab_delimited() {
     fi
 }
 
-if is_tab_delimited "$first_file"; then
+if is_tab_delimited "${first_file}"; then
     echo "The first file is tab-delimited."
 else
     echo "The first file is not tab-delimited."
     exit 1
 fi
 
-if is_tab_delimited "$second_file"; then
+if is_tab_delimited "${second_file}"; then
     echo "The second file is tab-delimited."
 else
     echo "The second file is not tab-delimited."
     exit 1
 fi
 
-if is_tab_delimited "$third_file"; then
+if is_tab_delimited "${third_file}"; then
     echo "The third file is tab-delimited."
 else
     echo "The third file is not tab-delimited."
@@ -65,8 +65,8 @@ echo "Start to recognize file"
 
 is_gdp_file() {
     local file_path=$1
-    local title_line=$(cat "$file_path" | head -n 1)
-    IFS=$'\t' read -ra array <<< "$title_line"
+    local title_line=$(cat "${file_path}" | head -n 1)
+    IFS=$'\t' read -ra array <<< "${title_line}"
     if [ ${#array[@]} -eq 7 ] && \
        [ "${array[0]}" == "Entity" ] && \
        [ "${array[1]}" == "Code" ] && \
@@ -82,12 +82,12 @@ is_gdp_file() {
 }
 
 get_gdp_file() {
-    if is_gdp_file "$first_file"; then
-        echo "$first_file"
-    elif is_gdp_file "$second_file"; then
-        echo "$second_file"
-    elif is_gdp_file "$third_file"; then
-        echo "$third_file"
+    if is_gdp_file "${first_file}"; then
+        echo "${first_file}"
+    elif is_gdp_file "${second_file}"; then
+        echo "${second_file}"
+    elif is_gdp_file "${third_file}"; then
+        echo "${third_file}"
     else
         return 1
     fi
@@ -98,7 +98,7 @@ if [[ $? -ne 0 ]]; then
     echo "Error: Failed to get gdp file."
     exit 1
 fi
-echo "gdp_file_path = $gdp_file_path"
+echo "gdp_file_path = ${gdp_file_path}"
 
 is_homicide_file() {
     local file_path=$1
@@ -116,12 +116,12 @@ is_homicide_file() {
 }
 
 get_homicide_file() {
-    if is_homicide_file "$first_file"; then
-        echo "$first_file"
-    elif is_homicide_file "$second_file"; then
+    if is_homicide_file "${first_file}"; then
+        echo "${first_file}"
+    elif is_homicide_file "${second_file}"; then
         echo "$second_file"
-    elif is_homicide_file "$third_file"; then
-        echo "$third_file"
+    elif is_homicide_file "${third_file}"; then
+        echo "${third_file}"
     else
         return 1
     fi
@@ -132,12 +132,12 @@ if [[ $? -ne 0 ]]; then
     echo "Error: Failed to get homicide file."
     exit 1
 fi
-echo "homicide_file_path = $homicide_file_path"
+echo "homicide_file_path = ${homicide_file_path}"
 
 is_life_file() {
     local file_path=$1
-    local title_line=$(cat "$file_path" | head -n 1)
-    IFS=$'\t' read -ra array <<< "$title_line"
+    local title_line=$(cat "${file_path}" | head -n 1)
+    IFS=$'\t' read -ra array <<< "${title_line}"
     if [ ${#array[@]} -eq 7 ] && \
        [ "${array[0]}" == "Entity" ] && \
        [ "${array[1]}" == "Code" ] && \
@@ -153,12 +153,12 @@ is_life_file() {
 }
 
 get_life_file() {
-    if is_life_file "$first_file"; then
-        echo "$first_file"
-    elif is_life_file "$second_file"; then
-        echo "$second_file"
-    elif is_life_file "$third_file"; then
-        echo "$third_file"
+    if is_life_file "${first_file}"; then
+        echo "${first_file}"
+    elif is_life_file "${second_file}"; then
+        echo "${second_file}"
+    elif is_life_file "{$third_file}"; then
+        echo "${third_file}"
     else
         return 1
     fi
@@ -169,10 +169,10 @@ if [[ $? -ne 0 ]]; then
     echo "Error: Failed to get life file."
     exit 1
 fi
-echo "life_file_path = $life_file_path"
+echo "life_file_path = ${life_file_path}"
 
 # Determine the uniqueness of the content of three files
-if [[ "$gdp_file_path" == "$homicide_file_path" || "$gdp_file_path" == "$life_file_path" || "$homicide_file_path" == "$life_file_path" ]]; then
+if [[ "${gdp_file_path}" == "${homicide_file_path}" || "${gdp_file_path}" == "${life_file_path}" || "${homicide_file_path}" == "${life_file_path}" ]]; then
     echo "Error: The file contents are not unique."
     exit 1
 fi
@@ -180,14 +180,14 @@ fi
 echo "Success to recognize file"
 echo "Start to cell count check"
 
-awk -F'\t' 'NR==FNR{title_tab_count=NF; next} NR>FNR{line_tab_count=NF; if (title_tab_count != line_tab_count) print "The number of cells in " FNR " th-line [" $0 "] is different from the title line."}' "$gdp_file_path" "$gdp_file_path"
-awk -F'\t' 'NR==FNR{title_tab_count=NF; next} NR>FNR{line_tab_count=NF; if (title_tab_count != line_tab_count) print "The number of cells in " FNR " th-line [" $0 "] is different from the title line."}' "$homicide_file_path" "$homicide_file_path"
-awk -F'\t' 'NR==FNR{title_tab_count=NF; next} NR>FNR{line_tab_count=NF; if (title_tab_count != line_tab_count) print "The number of cells in " FNR " th-line [" $0 "] is different from the title line."}' "$life_file_path" "$life_file_path"
+awk -F'\t' 'NR==FNR{title_tab_count=NF; next} NR>FNR{line_tab_count=NF; if (title_tab_count != line_tab_count) print "The number of cells in " FNR " th-line [" $0 "] is different from the title line."}' "${gdp_file_path}" "${gdp_file_path}"
+awk -F'\t' 'NR==FNR{title_tab_count=NF; next} NR>FNR{line_tab_count=NF; if (title_tab_count != line_tab_count) print "The number of cells in " FNR " th-line [" $0 "] is different from the title line."}' "${homicide_file_path}" "${homicide_file_path}"
+awk -F'\t' 'NR==FNR{title_tab_count=NF; next} NR>FNR{line_tab_count=NF; if (title_tab_count != line_tab_count) print "The number of cells in " FNR " th-line [" $0 "] is different from the title line."}' "${life_file_path}" "${life_file_path}"
 
 echo "Complete cell count check"
 
 # create temporary directory
-tmp_path='../tmp/'
+tmp_path='./tmp/'
 if [ -d "$tmp_path" ]; then
     rm -r "$tmp_path"
 fi
@@ -235,7 +235,33 @@ mv ${filtered_homicide_tmp_path} ${homicide_tmp_path}
 mv ${filtered_life_tmp_path} ${life_tmp_path}
 
 echo "Complete filtering data between 2011-2021"
+echo "Start to combine file"
 
 (head -n 1 ${gdp_tmp_path} && tail -n +2 ${gdp_tmp_path} | sort -t $'\t' -k1,1 -k2,2 -k3,3) > ${filtered_gdp_tmp_path}
 (head -n 1 ${homicide_tmp_path} && tail -n +2 ${homicide_tmp_path} | sort -t $'\t' -k1,1 -k2,2 -k3,3) > ${filtered_homicide_tmp_path}
 (head -n 1 ${life_tmp_path} && tail -n +2 ${life_tmp_path} | sort -t $'\t' -k1,1 -k2,2 -k3,3) > ${filtered_life_tmp_path}
+
+rm ${gdp_tmp_path}
+rm ${homicide_tmp_path}
+rm ${life_tmp_path}
+
+mv ${filtered_gdp_tmp_path} ${gdp_tmp_path}
+mv ${filtered_homicide_tmp_path} ${homicide_tmp_path}
+mv ${filtered_life_tmp_path} ${life_tmp_path}
+
+gdp_homicide_merged_file=${tmp_path}"gdp_homicide_merged_file.tsv"
+result_file=${tmp_path}"result_file.tsv"
+filtered_result_file=${tmp_path}"filtered_result_file.tsv"
+
+awk -F"\t" 'BEGIN {OFS="\t"} NR==FNR {a[$1$2$3]=$4; next} ($1$2$3 in a) {print $0, a[$1$2$3]}' ${homicide_tmp_path} ${gdp_tmp_path} > ${gdp_homicide_merged_file}
+awk -F"\t" 'BEGIN {OFS="\t"} NR==FNR {a[$1$2$3]=$4FS$5FS$6FS$7; next} ($1$2$3 in a) {print $0, a[$1$2$3]}' ${gdp_homicide_merged_file} ${life_tmp_path} > ${result_file}
+awk -F"\t" 'BEGIN {OFS="\t"} $4 != "" && $5 != "" && $6 != "" && $8 != ""  && $10 != "" {print $0}' ${result_file} > ${filtered_result_file}
+
+mv ${filtered_result_file} ${result_file}
+awk -F"\t" 'BEGIN {OFS="\t"} {$5=""; $6=""; sub(/\t\t/, "\t"); print $0}' ${result_file} > ${filtered_result_file}
+mv ${filtered_result_file} ${result_file}
+awk -F"\t" 'BEGIN {OFS="\t"} {print $1, $2, $3, $7, $8, $9, $4, $6}' ${result_file} > ${filtered_result_file}
+mv ${filtered_result_file} ${result_file}
+
+echo "Complete to combine file"
+cat "${result_file}"
