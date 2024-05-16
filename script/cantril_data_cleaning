@@ -235,3 +235,7 @@ mv ${filtered_homicide_tmp_path} ${homicide_tmp_path}
 mv ${filtered_life_tmp_path} ${life_tmp_path}
 
 echo "Complete filtering data between 2011-2021"
+
+(head -n 1 ${gdp_tmp_path} && tail -n +2 ${gdp_tmp_path} | sort -t $'\t' -k1,1 -k2,2 -k3,3) > ${filtered_gdp_tmp_path}
+(head -n 1 ${homicide_tmp_path} && tail -n +2 ${homicide_tmp_path} | sort -t $'\t' -k1,1 -k2,2 -k3,3) > ${filtered_homicide_tmp_path}
+(head -n 1 ${life_tmp_path} && tail -n +2 ${life_tmp_path} | sort -t $'\t' -k1,1 -k2,2 -k3,3) > ${filtered_life_tmp_path}
