@@ -207,9 +207,9 @@ echo "Start filtering rows with empty country code field"
 filtered_gdp_tmp_path=${tmp_path}"filtered_gdp_file.tsv"
 filtered_homicide_tmp_path=${tmp_path}"filtered_homicide_file.tsv"
 filtered_life_tmp_path=${tmp_path}"filtered_life_file.tsv"
-awk -F'\t' '$2 != "" { print }' "${gdp_tmp_path}" > ${filtered_gdp_tmp_path}
-awk -F'\t' '$2 != "" { print }' "${homicide_tmp_path}" > ${filtered_homicide_tmp_path}
-awk -F'\t' '$2 != "" { print }' "${life_tmp_path}" > ${filtered_life_tmp_path}
+awk -F'\t' 'NR==1 || $2 != "" { print }' "${gdp_tmp_path}" > ${filtered_gdp_tmp_path}
+awk -F'\t' 'NR==1 || $2 != "" { print }' "${homicide_tmp_path}" > ${filtered_homicide_tmp_path}
+awk -F'\t' 'NR==1 || $2 != "" { print }' "${life_tmp_path}" > ${filtered_life_tmp_path}
 
 rm ${gdp_tmp_path}
 rm ${homicide_tmp_path}
@@ -222,9 +222,9 @@ mv ${filtered_life_tmp_path} ${life_tmp_path}
 echo "Complete filtering rows with empty country code field"
 echo "Start filtering data between 2011-2021"
 
-awk -F'\t' '$3 >= 2011 && $3 <= 2021 { print }' "$gdp_tmp_path" > ${filtered_gdp_tmp_path}
-awk -F'\t' '$3 >= 2011 && $3 <= 2021 { print }' "$homicide_tmp_path" > ${filtered_homicide_tmp_path}
-awk -F'\t' '$3 >= 2011 && $3 <= 2021 { print }' "$life_tmp_path" > ${filtered_life_tmp_path}
+awk -F'\t' 'NR==1 || ($3 >= 2011 && $3 <= 2021) { print }' "$gdp_tmp_path" > ${filtered_gdp_tmp_path}
+awk -F'\t' 'NR==1 || ($3 >= 2011 && $3 <= 2021) { print }' "$homicide_tmp_path" > ${filtered_homicide_tmp_path}
+awk -F'\t' 'NR==1 || ($3 >= 2011 && $3 <= 2021) { print }' "$life_tmp_path" > ${filtered_life_tmp_path}
 
 rm ${gdp_tmp_path}
 rm ${homicide_tmp_path}
