@@ -1,0 +1,15 @@
+#!/bin/bash
+
+usage_string="Usage: best_predictor input_file"
+
+# Check the number of input arguments
+if [ $# -ne 1 ]; then
+    echo "Error: Incorrect number of arguments." >&2
+    echo ${usage_string} >&2
+    exit 1
+fi
+
+if ! [ -f "$1" ]; then
+    echo "Input file do not exist, please check." >&2
+    exit 1
+fi
