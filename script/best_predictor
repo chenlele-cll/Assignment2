@@ -26,3 +26,8 @@ tmp_file_name=tmp.tsv
 cp ${data_file} $tmp_path/$tmp_file_name
 cd $tmp_path
 awk -F $'\t' '{print > $1".tsv"}; NR==1{print > $1".tsv"}' $tmp_file_name
+
+countries=$(awk -F $'\t' '!seen[$1]++ {print $1}' $tmp_file_name)
+for country in $countries; do
+    echo ${country}
+done
