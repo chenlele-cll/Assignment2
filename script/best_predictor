@@ -13,3 +13,16 @@ if ! [ -f "$1" ]; then
     echo "Input file do not exist, please check." >&2
     exit 1
 fi
+
+data_file=$1
+
+tmp_path='./tmp/'
+if [ -d "$tmp_path" ]; then
+    rm -r "$tmp_path"
+fi
+mkdir $tmp_path
+
+tmp_file_name=tmp.tsv
+cp ${data_file} $tmp_path/$tmp_file_name
+cd $tmp_path
+awk -F $'\t' '{print > $1".tsv"}; NR==1{print > $1".tsv"}' $tmp_file_name
