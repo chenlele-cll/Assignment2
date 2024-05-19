@@ -165,3 +165,24 @@ echo "Mean correlation of GDP with Cantril ladder is $(printf "%.3f" $avg_gdp_co
 echo "Mean correlation of Population with Cantril ladder is $(printf "%.3f" $avg_population_corr)"
 echo "Mean correlation of Life Expectancy with Cantril ladder is $(printf "%.3f" $avg_life_expectancy_corr)"
 
+# 比较相关性绝对值大小并输出最相关的指标
+abs_homicide_corr=$(echo "$avg_homicide_corr" | awk '{print ($1<0)?-$1:$1}')
+abs_gdp_corr=$(echo "$avg_gdp_corr" | awk '{print ($1<0)?-$1:$1}')
+abs_population_corr=$(echo "$avg_population_corr" | awk '{print ($1<0)?-$1:$1}')
+abs_life_expectancy_corr=$(echo "$avg_life_expectancy_corr" | awk '{print ($1<0)?-$1:$1}')
+echo "abs_homicide_corr: $abs_homicide_corr"
+echo "abs_gdp_corr: $abs_gdp_corr"
+echo "abs_population_corr: $abs_population_corr"
+echo "abs_life_expectancy_corr: $abs_life_expectancy_corr"
+
+max_corr=$(echo "$abs_homicide_corr $abs_gdp_corr $abs_population_corr $abs_life_expectancy_corr" | tr ' ' '\n' | sort -nr | head -n 1)
+
+if [ "$(printf "%.3f" $max_corr)" == "$(printf "%.3f" $abs_homicide_corr)" ]; then
+    echo "Most predictive mean correlation with the Cantril ladder is Homicide Rate (r = $(printf "%.3f" $avg_homicide_corr))"
+elif [ "$(printf "%.3f" $max_corr)" == "$(printf "%.3f" $abs_gdp_corr)" ]; then
+    echo "Most predictive mean correlation with the Cantril ladder is GDP (r = $(printf "%.3f" $avg_gdp_corr))"
+elif [ "$(printf "%.3f" $max_corr)" == "$(printf "%.3f" $abs_population_corr)" ]; then
+    echo "Most predictive mean correlation with the Cantril ladder is Population (r = $(printf "%.3f" $avg_population_corr))"
+elif [ "$(printf "%.3f" $max_corr)" == "$(printf "%.3f" $abs_life_expectancy_corr)" ]; then
+    echo "Most predictive mean correlation with the Cantril ladder is Life Expectancy (r = $(printf "%.3f" $avg_life_expectancy_corr))"
+fi
