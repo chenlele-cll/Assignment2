@@ -74,23 +74,34 @@ calculate_correlation() {
         local x=${x_values[i]}
         local y=${y_values[i]}
         # echo "$x $y"
-        sum_x=$(echo "scale=4; $sum_x + $x" | bc)
+        sum_x=$(echo "scale=10; $sum_x + $x" | bc)
         # echo "$i-sum_x: $sum_x"
-        sum_y=$(echo "scale=4; $sum_y + $y" | bc)
+        sum_y=$(echo "scale=10; $sum_y + $y" | bc)
         # echo "$i-sum_y: $sum_y"
-        sum_x_sq=$(echo "scale=4; $sum_x_sq + $x*$x" | bc)
+        sum_x_sq=$(echo "scale=10; $sum_x_sq + $x*$x" | bc)
         # echo "$i-sum_x_sq: $sum_x_sq"
-        sum_y_sq=$(echo "scale=4; $sum_y_sq + $y*$y" | bc)
+        sum_y_sq=$(echo "scale=10; $sum_y_sq + $y*$y" | bc)
         # echo "$i-sum_y_sq: $sum_y_sq"
-        sum_xy=$(echo "scale=4; $sum_xy + $x*$y" | bc)
+        sum_xy=$(echo "scale=10; $sum_xy + $x*$y" | bc)
         # echo "$i-sum_xy: $sum_xy"
     done
-    local numerator=$(echo "scale=4; $n*$sum_xy - $sum_x*$sum_y" | bc)
+    # echo "$file-sum_x: $sum_x"
+    # echo "$file-sum_y: $sum_y"
+    # echo "$file-sum_x_sq: $sum_x_sq"
+    # echo "$file-sum_y_sq: $sum_y_sq"
+    # echo "$file-sum_xy: $sum_xy"
+
+    local numerator=$(echo "scale=10; $n*$sum_xy - $sum_x*$sum_y" | bc)
     # echo "numerator: $numerator"
-    local denominator=$(echo "scale=4; sqrt(${n}*${sum_x_sq} - ${sum_x}*${sum_x}) * sqrt(${n}*${sum_y_sq} - ${sum_y}*${sum_y})" | bc)
-    # echo "denominator: $denominator"
-    local correlation=$(echo "scale=4; ${numerator} / ${denominator}" | bc)
-    # echo "Pearson correlation coefficient: $correlation"
+    local denominator=$(echo "scale=10; sqrt(${n}*${sum_x_sq} - ${sum_x}*${sum_x}) * sqrt(${n}*${sum_y_sq} - ${sum_y}*${sum_y})" | bc)
+    # echo "$file-denominator: $denominator"
+    # 如果分母为 0,则结果为 0
+    if [ "$(echo "$denominator == 0" | bc)" -eq 1 ]; then
+        correlation=0
+    else
+        correlation=$(echo "scale=10; $numerator / $denominator" | bc)
+    fi
+    # echo "$file-correlation: $correlation"
     echo $correlation
 }
 
@@ -109,14 +120,14 @@ for country in "${filtered_countries[@]}"; do
 
     # 计算每个指标与 "Cantril ladder score" 的皮尔逊相关性
     gdp_corr=$(calculate_correlation "$country_file" 4 8)
-    # echo "gdp_corr: $gdp_corr"
+    # echo "$country-gdp_corr: $gdp_corr"
     # calculate_correlation "$country_file" 4 8
     population_corr=$(calculate_correlation "$country_file" 5 8)
-    # echo "population_corr: $population_corr"
+    # echo "$country-population_corr: $population_corr"
     homicide_corr=$(calculate_correlation "$country_file" 6 8)
-    # echo "homicide_corr: $homicide_corr"
+    # echo "$country-homicide_corr: $homicide_corr"
     life_expectancy_corr=$(calculate_correlation "$country_file" 7 8)
-    echo "life_expectancy_corr: $life_expectancy_corr"
+    # echo "life_expectancy_corr: $life_expectancy_corr"
 
     # echo "${country}, correlation of Homicide Rate with Cantril ladder is " ${homicide_corr}
     # echo "${country}, correlation of GDP with Cantril ladder is " ${gdp_corr}
@@ -124,37 +135,33 @@ for country in "${filtered_countries[@]}"; do
     # echo "${country}, correlation of Life Expectancy with Cantril ladder is " ${life_expectancy_corr}
 
     # 累加每个国家的相关性值
-    # if [ "$homicide_corr" != "NA" ]; then
-    #     total_homicide_corr=$(echo "$total_homicide_corr + $homicide_corr" | bc -l)
-    # fi
+    total_homicide_corr=$(echo "scale=10; $total_homicide_corr + $homicide_corr" | bc -l)
+    total_gdp_corr=$(echo "scale=10; $total_gdp_corr + $gdp_corr" | bc -l)
+    total_population_corr=$(echo "scale=10; $total_population_corr + $population_corr" | bc -l)
+    total_life_expectancy_corr=$(echo "scale=10; $total_life_expectancy_corr + $life_expectancy_corr" | bc -l)
 
-    # if [ "$gdp_corr" != "NA" ]; then
-    #     total_gdp_corr=$(echo "$total_gdp_corr + $gdp_corr" | bc -l)
-    # fi
+    # echo "${country}-total_homicide_corr: $total_homicide_corr"
+    # echo "${country}-total_gdp_corr: $total_gdp_corr"
+    # echo "${country}-total_population_corr: $total_population_corr"
+    # echo "${country}-total_life_expectancy_corr: $total_life_expectancy_corr"
 
-    # if [ "$population_corr" != "NA" ]; then
-    #     total_population_corr=$(echo "$total_population_corr + $population_corr" | bc -l)
-    # fi
-
-    # if [ "$life_expectancy_corr" != "NA" ]; then
-    #     total_life_expectancy_corr=$(echo "$total_life_expectancy_corr + $life_expectancy_corr" | bc -l)
-    # fi
     # echo ${country_file}
     count=$((count + 1))
 done
 echo ${count}
 
 if [ $count -gt 0 ]; then
-    avg_homicide_corr=$(echo "$total_homicide_corr / $count" | bc -l)
-    avg_gdp_corr=$(echo "$total_gdp_corr / $count" | bc -l)
-    avg_population_corr=$(echo "$total_population_corr / $count" | bc -l)
-    avg_life_expectancy_corr=$(echo "$total_life_expectancy_corr / $count" | bc -l)
+    avg_homicide_corr=$(echo "scale=3; $total_homicide_corr / $count" | bc -l)
+    avg_gdp_corr=$(echo "scale=3; $total_gdp_corr / $count" | bc -l)
+    avg_population_corr=$(echo "scale=3; $total_population_corr / $count" | bc -l)
+    avg_life_expectancy_corr=$(echo "scale=3; $total_life_expectancy_corr / $count" | bc -l)
 fi
 
 cd ..
-# rm -r "$tmp_path"
+rm -r "$tmp_path"
 
-# echo "Mean correlation of Homicide Rate with Cantril ladder is " ${avg_homicide_corr}
-# echo "Mean correlation of GDP with Cantril ladder is " ${avg_gdp_corr}
-# echo "Mean correlation of Population with Cantril ladder is " ${avg_population_corr}
-# echo "Mean correlation of Life Expectancy with Cantril ladder is " ${avg_life_expectancy_corr}
+echo "Mean correlation of Homicide Rate with Cantril ladder is $(printf "%.3f" $avg_homicide_corr)"
+echo "Mean correlation of GDP with Cantril ladder is $(printf "%.3f" $avg_gdp_corr)"
+echo "Mean correlation of Population with Cantril ladder is $(printf "%.3f" $avg_population_corr)"
+echo "Mean correlation of Life Expectancy with Cantril ladder is $(printf "%.3f" $avg_life_expectancy_corr)"
+
