@@ -27,95 +27,120 @@ cp ${data_file} $tmp_path/$tmp_file_name
 cd $tmp_path
 awk -F $'\t' 'NR>1{print > $1".tsv"}' $tmp_file_name
 
-calculate_correlation() {
-    local file=$1    # 输入文件名（按国家分割的文件）
-    local x_column=$2 # 自变量所在列（如 Homicide Rate, GDP, Population, Life Expectancy）
-    local y_column=$3 # 因变量所在列（Cantril ladder score）
-
-    # 读取文件中的数据
-    mapfile -t x_values < <(awk -F'\t' -v col=$x_column '{print $col}' "$file")
-    mapfile -t y_values < <(awk -F'\t' -v col=$y_column '{print $col}' "$file")
-
-    # 计算皮尔逊相关系数
-    local n=${#x_values[@]}
-    # echo "n=$n"
-    local sum_x=0
-    local sum_y=0
-    local sum_x_sq=0
-    local sum_y_sq=0
-    local sum_xy=0
-    for ((i=0; i<n; i++)); do
-        local x=${x_values[i]}
-        local y=${y_values[i]}
-        # echo "$x $y"
-        sum_x=$(echo "scale=4; $sum_x + $x" | bc)
-        # echo "$i-sum_x: $sum_x"
-        sum_y=$(echo "scale=4; $sum_y + $y" | bc)
-        echo "$i-sum_y: $sum_y"
-        # sum_x_sq=$(echo "scale=4; $sum_x_sq + $x*$x" | bc)
-        # sum_y_sq=$(echo "scale=4; $sum_y_sq + $y*$y" | bc)
-        # sum_xy=$(echo "scale=4; $sum_xy + $x*$y" | bc)
-    done
-    # local numerator=$((n*sum_xy - sum_x*sum_y))
-    # local denominator=$(echo "scale=4; sqrt(${n}*${sum_x_sq} - ${sum_x}*${sum_x}) * sqrt(${n}*${sum_y_sq} - ${sum_y}*${sum_y})" | bc)
-    # local correlation=$(echo "scale=4; ${numerator} / ${denominator}" | bc)
-    # echo "Pearson correlation coefficient: $correlation"
-}
-
-total_homicide_corr=0
-total_gdp_corr=0
-total_population_corr=0
-total_life_expectancy_corr=0
-count=0
+# 输出文件名
+output_file="filtered_data.tsv"
+# 提取标题行并保存
+head -n 1 "$tmp_file_name" > "$output_file"
 
 country_name_file=country_name.tsv
 awk -F $'\t' 'NR>1 && !seen[$1]++ {print $1}' $tmp_file_name >> $country_name_file
 mapfile -t countries < $country_name_file
 # echo "Number of elements in the array: ${#countries[@]}"
-for country in "${countries[@]}"; do
-    country_file=${country}.tsv
 
-    # 计算每个指标与 "Cantril ladder score" 的皮尔逊相关性
-    # gdp_corr=$(calculate_correlation "$country_file" 4 8)
-    calculate_correlation "$country_file" 4 8
-    # population_corr=$(calculate_correlation "$file" 5 8)
-    # homicide_corr=$(calculate_correlation "$file" 6 8)
-    # life_expectancy_corr=$(calculate_correlation "$file" 7 8)
-
-    # echo "${country}, correlation of Homicide Rate with Cantril ladder is " ${homicide_corr}
-    # echo "${country}, correlation of GDP with Cantril ladder is " ${gdp_corr}
-    # echo "${country}, correlation of Population with Cantril ladder is " ${population_corr}
-    # echo "${country}, correlation of Life Expectancy with Cantril ladder is " ${life_expectancy_corr}
-
-    # 累加每个国家的相关性值
-    # if [ "$homicide_corr" != "NA" ]; then
-    #     total_homicide_corr=$(echo "$total_homicide_corr + $homicide_corr" | bc -l)
-    # fi
-
-    # if [ "$gdp_corr" != "NA" ]; then
-    #     total_gdp_corr=$(echo "$total_gdp_corr + $gdp_corr" | bc -l)
-    # fi
-
-    # if [ "$population_corr" != "NA" ]; then
-    #     total_population_corr=$(echo "$total_population_corr + $population_corr" | bc -l)
-    # fi
-
-    # if [ "$life_expectancy_corr" != "NA" ]; then
-    #     total_life_expectancy_corr=$(echo "$total_life_expectancy_corr + $life_expectancy_corr" | bc -l)
-    # fi
-    # echo ${file}
-    count=$((count + 1))
+# 遍历每个实体
+for entity in "${countries[@]}"; do
+    # echo "entity: ${entity}"
+    # 获取该实体的 Cantril ladder score 不为空的行数
+    cantril_count=$(grep "^$entity" "$tmp_file_name" | awk -F '\t' '$8 != "" {count++} END {print count}')
+    # echo "cantril_count: ${cantril_count}, ${entity}"
+    # 如果该实体的 Cantril ladder score 行数大于 2，则保留所有数据
+    # 确保 cantril_count 是整数
+    if [[ "$cantril_count" =~ ^[0-9]+$ ]]; then
+        # 如果该实体的 Cantril ladder score 行数大于 2，则保留所有数据
+        if [ "$cantril_count" -gt 2 ]; then
+            grep "^$entity" "$tmp_file_name" | awk -F '\t' '$8 != ""' >> "$output_file"
+            # grep "^$entity" "$tmp_file_name" >> "$output_file"
+        fi
+    fi
 done
-echo ${count}
 
-if [ $count -gt 0 ]; then
-    avg_homicide_corr=$(echo "$total_homicide_corr / $count" | bc -l)
-    avg_gdp_corr=$(echo "$total_gdp_corr / $count" | bc -l)
-    avg_population_corr=$(echo "$total_population_corr / $count" | bc -l)
-    avg_life_expectancy_corr=$(echo "$total_life_expectancy_corr / $count" | bc -l)
-fi
+# echo "过滤后的数据已保存到 $output_file"
 
-cd ..
+# calculate_correlation() {
+#     local file=$1    # 输入文件名（按国家分割的文件）
+#     local x_column=$2 # 自变量所在列（如 Homicide Rate, GDP, Population, Life Expectancy）
+#     local y_column=$3 # 因变量所在列（Cantril ladder score）
+
+#     # 读取文件中的数据
+#     mapfile -t x_values < <(awk -F'\t' -v col=$x_column '{print $col}' "$file")
+#     mapfile -t y_values < <(awk -F'\t' -v col=$y_column '{print $col}' "$file")
+
+#     # 计算皮尔逊相关系数
+#     local n=${#x_values[@]}
+#     # echo "n=$n"
+#     local sum_x=0
+#     local sum_y=0
+#     local sum_x_sq=0
+#     local sum_y_sq=0
+#     local sum_xy=0
+#     for ((i=0; i<n; i++)); do
+#         local x=${x_values[i]}
+#         local y=${y_values[i]}
+#         # echo "$x $y"
+#         sum_x=$(echo "scale=4; $sum_x + $x" | bc)
+#         # echo "$i-sum_x: $sum_x"
+#         sum_y=$(echo "scale=4; $sum_y + $y" | bc)
+#         echo "$i-sum_y: $sum_y"
+#         # sum_x_sq=$(echo "scale=4; $sum_x_sq + $x*$x" | bc)
+#         # sum_y_sq=$(echo "scale=4; $sum_y_sq + $y*$y" | bc)
+#         # sum_xy=$(echo "scale=4; $sum_xy + $x*$y" | bc)
+#     done
+#     # local numerator=$((n*sum_xy - sum_x*sum_y))
+#     # local denominator=$(echo "scale=4; sqrt(${n}*${sum_x_sq} - ${sum_x}*${sum_x}) * sqrt(${n}*${sum_y_sq} - ${sum_y}*${sum_y})" | bc)
+#     # local correlation=$(echo "scale=4; ${numerator} / ${denominator}" | bc)
+#     # echo "Pearson correlation coefficient: $correlation"
+# }
+
+# total_homicide_corr=0
+# total_gdp_corr=0
+# total_population_corr=0
+# total_life_expectancy_corr=0
+# count=0
+
+# for country in "${countries[@]}"; do
+#     country_file=${country}.tsv
+
+#     # 计算每个指标与 "Cantril ladder score" 的皮尔逊相关性
+#     # gdp_corr=$(calculate_correlation "$country_file" 4 8)
+#     calculate_correlation "$country_file" 4 8
+#     # population_corr=$(calculate_correlation "$file" 5 8)
+#     # homicide_corr=$(calculate_correlation "$file" 6 8)
+#     # life_expectancy_corr=$(calculate_correlation "$file" 7 8)
+
+#     # echo "${country}, correlation of Homicide Rate with Cantril ladder is " ${homicide_corr}
+#     # echo "${country}, correlation of GDP with Cantril ladder is " ${gdp_corr}
+#     # echo "${country}, correlation of Population with Cantril ladder is " ${population_corr}
+#     # echo "${country}, correlation of Life Expectancy with Cantril ladder is " ${life_expectancy_corr}
+
+#     # 累加每个国家的相关性值
+#     # if [ "$homicide_corr" != "NA" ]; then
+#     #     total_homicide_corr=$(echo "$total_homicide_corr + $homicide_corr" | bc -l)
+#     # fi
+
+#     # if [ "$gdp_corr" != "NA" ]; then
+#     #     total_gdp_corr=$(echo "$total_gdp_corr + $gdp_corr" | bc -l)
+#     # fi
+
+#     # if [ "$population_corr" != "NA" ]; then
+#     #     total_population_corr=$(echo "$total_population_corr + $population_corr" | bc -l)
+#     # fi
+
+#     # if [ "$life_expectancy_corr" != "NA" ]; then
+#     #     total_life_expectancy_corr=$(echo "$total_life_expectancy_corr + $life_expectancy_corr" | bc -l)
+#     # fi
+#     # echo ${file}
+#     count=$((count + 1))
+# done
+# echo ${count}
+
+# if [ $count -gt 0 ]; then
+#     avg_homicide_corr=$(echo "$total_homicide_corr / $count" | bc -l)
+#     avg_gdp_corr=$(echo "$total_gdp_corr / $count" | bc -l)
+#     avg_population_corr=$(echo "$total_population_corr / $count" | bc -l)
+#     avg_life_expectancy_corr=$(echo "$total_life_expectancy_corr / $count" | bc -l)
+# fi
+
+# cd ..
 # rm -r "$tmp_path"
 
 # echo "Mean correlation of Homicide Rate with Cantril ladder is " ${avg_homicide_corr}
