@@ -16,6 +16,7 @@ fi
 
 data_file=$1
 
+# copy input file to tmp file
 tmp_path='./tmp/'
 if [ -d "$tmp_path" ]; then
     rm -r "$tmp_path"
@@ -26,43 +27,47 @@ tmp_file_name=tmp.tsv
 cp ${data_file} $tmp_path/$tmp_file_name
 cd $tmp_path
 
-# 输出文件名
+# filter data
 output_file="filtered_data.tsv"
-# 提取标题行并保存
 head -n 1 "$tmp_file_name" > "$output_file"
 
+# get country array
 country_name_file=country_name.tsv
 awk -F $'\t' 'NR>1 && !seen[$1]++ {print $1}' $tmp_file_name >> $country_name_file
 mapfile -t countries < $country_name_file
 # echo "Number of elements in the array: ${#countries[@]}"
 
-# 遍历每个实体
+# iterate each county
 for entity in "${countries[@]}"; do
-    # 获取该实体的 Cantril ladder score 不为空的行数
+    # Get the number of rows where the entity's Cantril ladder score is not empty
     cantril_count=$(grep "^$entity" "$tmp_file_name" | awk -F '\t' '$8 != "" {count++} END {print count}')
     # echo "cantril_count: ${cantril_count}, ${entity}"
-    # 如果该实体的 Cantril ladder score 行数大于 2，则保留所有数据
-    # 确保 cantril_count 是整数
+    # If the entity has more than 2 Cantril ladder score rows, keep all data
     if [[ "$cantril_count" =~ ^[0-9]+$ ]]; then
-        # 如果该实体的 Cantril ladder score 行数大于 2，则保留所有数据
         if [ "$cantril_count" -gt 2 ]; then
             grep "^$entity" "$tmp_file_name" | awk -F '\t' '$8 != ""' >> "$output_file"
         fi
     fi
 done
 
+# Separate data from different countries into a single file
 awk -F $'\t' 'NR>1{print > $1".tsv"}' $output_file
 
-calculate_correlation() {
-    local file=$1    # 输入文件名（按国家分割的文件）
-    local x_column=$2 # 自变量所在列（如 Homicide Rate, GDP, Population, Life Expectancy）
-    local y_column=$3 # 因变量所在列（Cantril ladder score）
+# get filtered conutry array
+rm ${country_name_file}
+awk -F $'\t' 'NR>1 && !seen[$1]++ {print $1}' $output_file >> $country_name_file
+mapfile -t filtered_countries < $country_name_file
 
-    # 读取文件中的数据
+calculate_correlation() {
+    local file=$1    # input file name (file split by country)
+    local x_column=$2 # The column of the independent variable (such as Homicide Rate, GDP, Population, Life Expectancy)
+    local y_column=$3 # Column of dependent variable (Cantril ladder score)
+
+    # Read data from file
     mapfile -t x_values < <(awk -F'\t' -v col=$x_column '{print $col}' "$file")
     mapfile -t y_values < <(awk -F'\t' -v col=$y_column '{print $col}' "$file")
 
-    # 计算皮尔逊相关系数
+    # Calculate Pearson correlation coefficient
     local n=${#x_values[@]}
     # echo "n=$n"
     local sum_x=0
@@ -95,12 +100,14 @@ calculate_correlation() {
     # echo "numerator: $numerator"
     local denominator=$(echo "scale=10; sqrt(${n}*${sum_x_sq} - ${sum_x}*${sum_x}) * sqrt(${n}*${sum_y_sq} - ${sum_y}*${sum_y})" | bc)
     # echo "$file-denominator: $denominator"
-    # 如果分母为 0,则结果为 0
+
+    # If the denominator is 0, the result is 0
     if [ "$(echo "$denominator == 0" | bc)" -eq 1 ]; then
         correlation=0
     else
         correlation=$(echo "scale=10; $numerator / $denominator" | bc)
     fi
+
     # echo "$file-correlation: $correlation"
     echo $correlation
 }
@@ -111,14 +118,10 @@ total_population_corr=0
 total_life_expectancy_corr=0
 count=0
 
-rm ${country_name_file}
-awk -F $'\t' 'NR>1 && !seen[$1]++ {print $1}' $output_file >> $country_name_file
-mapfile -t filtered_countries < $country_name_file
-
 for country in "${filtered_countries[@]}"; do
     country_file=${country}.tsv
 
-    # 计算每个指标与 "Cantril ladder score" 的皮尔逊相关性
+    # Calculate the Pearson correlation of each indicator with "Cantril ladder score"
     gdp_corr=$(calculate_correlation "$country_file" 4 8)
     # echo "$country-gdp_corr: $gdp_corr"
     # calculate_correlation "$country_file" 4 8
@@ -134,7 +137,7 @@ for country in "${filtered_countries[@]}"; do
     # echo "${country}, correlation of Population with Cantril ladder is " ${population_corr}
     # echo "${country}, correlation of Life Expectancy with Cantril ladder is " ${life_expectancy_corr}
 
-    # 累加每个国家的相关性值
+    # Accumulate correlation values for each country
     total_homicide_corr=$(echo "scale=10; $total_homicide_corr + $homicide_corr" | bc -l)
     total_gdp_corr=$(echo "scale=10; $total_gdp_corr + $gdp_corr" | bc -l)
     total_population_corr=$(echo "scale=10; $total_population_corr + $population_corr" | bc -l)
@@ -160,12 +163,13 @@ fi
 cd ..
 rm -r "$tmp_path"
 
+# output results
 echo "Mean correlation of Homicide Rate with Cantril ladder is $(printf "%.3f" $avg_homicide_corr)"
 echo "Mean correlation of GDP with Cantril ladder is $(printf "%.3f" $avg_gdp_corr)"
 echo "Mean correlation of Population with Cantril ladder is $(printf "%.3f" $avg_population_corr)"
 echo "Mean correlation of Life Expectancy with Cantril ladder is $(printf "%.3f" $avg_life_expectancy_corr)"
 
-# 比较相关性绝对值大小并输出最相关的指标
+# Compare the absolute value of the correlation and output the most relevant indicator
 abs_homicide_corr=$(echo "$avg_homicide_corr" | awk '{print ($1<0)?-$1:$1}')
 abs_gdp_corr=$(echo "$avg_gdp_corr" | awk '{print ($1<0)?-$1:$1}')
 abs_population_corr=$(echo "$avg_population_corr" | awk '{print ($1<0)?-$1:$1}')
